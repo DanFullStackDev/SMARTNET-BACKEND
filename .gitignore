@@ -1,0 +1,11 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Baileys auth info
+auth_info_baileys/
+
+# Optional extras
+
