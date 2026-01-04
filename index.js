@@ -1,3 +1,4 @@
+// index.js (Final Safe Version)
 require('dotenv').config();
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
@@ -8,6 +9,7 @@ const fs = require('fs');
 const connectDB = require('./config/db');
 const corsMiddleware = require('./config/cors');
 const { handleSmartMenu } = require('./utils/smartMenu');
+const { initScheduler } = require('./utils/scheduler'); 
 const botRoutes = require('./routes/botRoutes');
 const bundleRoutes = require('./routes/bundleRoutes');
 const bundleAdminRoutes = require('./routes/bundleAdminRoutes');
@@ -22,7 +24,6 @@ app.use(express.json());
 connectDB();
 
 // --- GLOBALS ---
-// We use globals so routes can access the bot status
 global.sock = null;
 global.qrCodeData = null;
 
@@ -35,10 +36,11 @@ app.use((req, res, next) => {
 // --- ROUTES ---
 app.use('/api/bundles', bundleRoutes);
 app.use('/api/bundle-admin', bundleAdminRoutes);
-app.use('/api', botRoutes); // This now handles /api/qr, /api/groups, etc.
+app.use('/api', botRoutes);
 
 // --- WHATSAPP BOT CONNECTION ---
 async function connectToWhatsApp() {
+    console.log("🔌 Connecting to WhatsApp...");
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
 
     const sock = makeWASocket({
@@ -46,7 +48,10 @@ async function connectToWhatsApp() {
         logger: pino({ level: 'silent' }),
     });
 
-    global.sock = sock; // Update global instance
+    global.sock = sock; 
+
+    // Start Scheduler (Only runs if bot is connected)
+    initScheduler(sock); 
 
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
@@ -74,12 +79,11 @@ async function connectToWhatsApp() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // Smart Menu Handler
+    // Smart Menu & AI Handler
     sock.ev.on('messages.upsert', async m => {
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe) return;
         
-        // Call the separate logic file
         await handleSmartMenu(sock, msg);
     });
 }
@@ -88,5 +92,13 @@ async function connectToWhatsApp() {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    connectToWhatsApp();
+    
+    // --- 🛡️ SAFEGUARD: Prevent Double-Replies ---
+    // If running on Localhost, we DISABLE the bot to let the VPS handle messages.
+    if (process.env.DISABLE_BOT === 'true') {
+        console.log("🛑 Bot Disabled Locally (Safe Mode Active)");
+    } else {
+        // On VPS, this variable won't exist, so it connects normally.
+        connectToWhatsApp();
+    }
 });
