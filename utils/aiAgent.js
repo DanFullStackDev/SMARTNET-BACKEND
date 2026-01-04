@@ -1,40 +1,43 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-// The Bot's "Brain" - Custom Instructions
-const CONTEXT = `
-You are 'SmartNet Bot', a helpful sales assistant for a Kenyan internet provider called SmartNet.
-Your goal is to sell Starlink-powered data bundles. Be polite, concise, and use Kenyan slang (Sheng) occasionally if appropriate.
-
-YOUR KNOWLEDGE BASE:
-- **Pricing:** - 5GB (Weekly) = KES 63
-  - 10GB (Monthly) = KES 99
-  - Unlimited (Monthly) = KES 1000
-- **How to Buy:** Tell them to reply with "1" or visit fastdatabundles.co.ke.
-- **Speed:** We use Starlink technology, so it is faster and more stable than Safaricom/Airtel in remote areas.
-- **Payment:** We accept M-Pesa via our website.
-- **Support:** If you cannot answer, tell them to reply with "3" to talk to a human agent.
-
-RULES:
-- Keep answers short (under 50 words).
-- Do not make up prices. Only use the ones listed above.
-- If the user greets you, just welcome them briefly.
+const CHAT_CONTEXT = `
+You are 'SmartNet Bot', a helpful assistant for a Kenyan internet provider.
+Keep answers short (under 50 words). Use Kenyan slang (Sheng) sparingly.
+Price List: 5GB (Weekly) = KES 63, 10GB (Monthly) = KES 99, Unlimited = KES 1000.
 `;
 
+const MARKETING_CONTEXT = `
+You are a Social Media Manager for 'SmartNet', a high-speed internet brand in Kenya.
+Your goal is to write engaging, exciting WhatsApp posts to keep a group active.
+- Use emojis.
+- Be hyped but professional.
+- Mention "Starlink technology".
+- End with a Call to Action (e.g., "Reply with 1 to buy!").
+`;
+
+// 1. Chat Bot Logic (Short)
 const askAI = async (userText) => {
     try {
-        const prompt = `${CONTEXT}\n\nUser Query: "${userText}"\n\nAnswer:`;
+        const prompt = `${CHAT_CONTEXT}\n\nUser: "${userText}"\n\nAnswer:`;
         const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text();
+        return result.response.text();
     } catch (error) {
-        console.error("AI Error:", error.message);
-        // Fallback if AI fails (e.g. quota limit)
-        return "Hey, I'm having trouble thinking right now. Please reply with '1' to see our menu!";
+        return "Hey, I'm busy right now. Reply with '1' for the menu!";
     }
 };
 
-module.exports = { askAI };
+// 2. Content Generator (Longer/Creative)
+const generatePost = async (topic) => {
+    try {
+        const prompt = `${MARKETING_CONTEXT}\n\nTask: Write a fun WhatsApp post about: "${topic}"`;
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+    } catch (error) {
+        return "🔥 Get the fastest internet in Kenya today! Prices start at KES 63. Reply '1' to join the movement!";
+    }
+};
+
+module.exports = { askAI, generatePost };
