@@ -1,0 +1,33 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            # 1. Go to the project folder (Update this if your folder name is different!)
+            cd ~/SMARTNET-BACKEND
+
+            # 2. Get the latest code
+            git pull origin main
+
+            # 3. Install any new libraries
+            npm install
+
+            # 4. Restart the bot
+            pm2 restart all
