@@ -14,8 +14,33 @@ const bundleAdminRoutes = require('./routes/bundleAdminRoutes');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// --- CORS CONFIGURATION (UPDATED) ---
+// This allows your Localhost, Vercel, and Custom Domain to talk to this backend.
+const allowedOrigins = [
+    'http://localhost:5173',                 // Vite Localhost (Frontend)
+    'http://localhost:3000',                 // CRA Localhost or other tools
+    'https://buy-fast-data-bundles.vercel.app',  // ⚠️ REPLACE with your actual Vercel domain
+    'https://www.fastdatabundles.co.ke',    // ⚠️ REPLACE with your bought domain
+    'https://fastdatabundles.co.ke'         // Non-www version
+];
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, or Postman)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log("Blocked by CORS:", origin); // Helpful for debugging
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true, // Important for cookies/sessions
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- DATABASE CONNECTION ---
@@ -29,7 +54,7 @@ app.use('/api/bundle-admin', bundleAdminRoutes);
 
 // --- WHATSAPP BOT LOGIC ---
 let sock;
-let qrCodeData = null;
+let qrCodeData = null; // Variable to store the QR code
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -43,7 +68,7 @@ async function connectToWhatsApp() {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
-            qrCodeData = qr;
+            qrCodeData = qr; // Update variable when new QR is generated
             console.log("New QR Code generated");
         }
 
@@ -61,7 +86,7 @@ async function connectToWhatsApp() {
             }
         } else if (connection === 'open') {
             console.log('✅ WhatsApp Connected!');
-            qrCodeData = "CONNECTED";
+            qrCodeData = "CONNECTED"; // Clear QR code when connected
         }
     });
 
@@ -90,6 +115,7 @@ const waitHuman = async (min = 3, max = 10) => {
 
 // --- API ENDPOINTS ---
 
+// 1. GET QR CODE (For Frontend)
 app.get('/api/qr', (req, res) => res.json({ qr: qrCodeData }));
 
 app.get('/api/groups', async (req, res) => {
@@ -110,7 +136,7 @@ app.get('/api/groups', async (req, res) => {
     }
 });
 
-// 1. GET MEMBERS OF A SPECIFIC GROUP
+// 2. GET MEMBERS OF A SPECIFIC GROUP
 app.get('/api/groups/:jid/participants', async (req, res) => {
     const { jid } = req.params;
     try {
@@ -130,7 +156,7 @@ app.get('/api/groups/:jid/participants', async (req, res) => {
     }
 });
 
-// 2. SAFE BROADCAST (Multiple Groups)
+// 3. SAFE BROADCAST (Multiple Groups)
 app.post('/api/broadcast-groups', async (req, res) => {
     const { groups, message } = req.body; // Expects array of Group JIDs
     
@@ -147,9 +173,6 @@ app.post('/api/broadcast-groups', async (req, res) => {
         try {
             console.log(`--> Sending to: ${groupJid}`);
             
-            // Get participants to tag them (Optional, risky for spam detection if used too much)
-            // Ideally, for safety, just send text without tagging everyone if sending to MANY groups.
-            // But since you asked to tag, we fetch metadata.
             const metadata = await sock.groupMetadata(groupJid);
             const participants = metadata.participants.map(p => p.id);
 
@@ -165,7 +188,7 @@ app.post('/api/broadcast-groups', async (req, res) => {
     console.log("✅ Broadcast Complete");
 });
 
-// 3. SAFE DM BLAST (Multiple Members)
+// 4. SAFE DM BLAST (Multiple Members)
 app.post('/api/broadcast-members', async (req, res) => {
     const { members, message } = req.body; // Expects array of User JIDs
     
