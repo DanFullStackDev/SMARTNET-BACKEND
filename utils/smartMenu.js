@@ -1,45 +1,68 @@
-const { askAI } = require('./aiAgent'); // Import the AI Brain
+const { askAI } = require('./aiAgent');
 
 const handleSmartMenu = async (sock, msg) => {
     const sender = msg.key.remoteJid;
     const isGroup = sender.endsWith('@g.us');
+    
+    // Clean the text: Remove spaces, lowercase it
     const text = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
     const cleanText = text.toLowerCase();
+    
     const WEBSITE_URL = "https://fastdatabundles.co.ke";
 
-    // 1. GLOBAL KEYWORDS (Priority)
-    if (cleanText.includes('price') || cleanText.includes('cost') || cleanText.includes('bundle')) {
+    // --- 🛑 RULE 1: SILENCE IN GROUPS ---
+    // The user explicitly requested the bot NOT to reply randomly in groups.
+    // It should only speak when the Admin broadcasts via the Dashboard.
+    if (isGroup) return; 
+
+
+    // --- 👋 RULE 2: THE WELCOME MESSAGE ---
+    // Triggers on: hi, hello, menu, start, smartnet
+    const greetings = ['hi', 'hello', 'hey', 'start', 'menu', 'morning', 'evening', 'afternoon'];
+    
+    if (greetings.some(word => cleanText.includes(word))) {
         await sock.sendMessage(sender, { 
-            text: "⚡ *SmartNet Packages:*\n\n✅ 5GB (Weekly) - KES 63\n✅ 10GB (Monthly) - KES 99\n✅ Unlimited - KES 1000\n\nReply *1* to buy now!" 
+            text: `🌟 *Welcome to SmartNet FastDataBundles!* 🌟\n\nWe provide high-speed, affordable internet powered by *Starlink technology*. 🚀\n\n✅ *No expensive hardware needed*\n✅ *Works with your existing Safaricom/Airtel line*\n✅ *Available all over Kenya*\n\n👇 *Reply with a number to proceed:*\n\n1️⃣ *See Prices & Buy Bundles* \n2️⃣ *Check My Balance* \n3️⃣ *Talk to Customer Care*` 
         });
         return;
     }
 
-    // 2. DM LOGIC
-    if (!isGroup) {
-        // --- HARDCODED MENUS ---
-        if (cleanText === '1') {
-            await sock.sendMessage(sender, { text: `🚀 *Get Connected Now*\n\nClick here to buy:\n👉 ${WEBSITE_URL}` });
-            return;
-        }
-        if (cleanText === '2') {
-            await sock.sendMessage(sender, { text: `🔍 *Balance Check*\n\nDial *544#* on your phone.` });
-            return;
-        }
-        if (cleanText === '3') {
-            await sock.sendMessage(sender, { text: `📞 *Support Ticket Created*\n\nA human agent will reply shortly.` });
-            return;
-        }
+    // --- 🔢 RULE 3: THE MENU OPTIONS ---
 
-        // --- 🤖 AI FALLBACK (The Magic) ---
-        // If the user text is NOT a number, ask the AI
-        // We filter out very short messages to avoid spamming AI with "ok" or "lol"
-        if (text.length > 2) {
-            // Show "typing..." status to make it feel real
-            await sock.sendPresenceUpdate('composing', sender); 
-            
-            const aiReply = await askAI(text);
-            
+    // Option 1: Buy (Link)
+    if (cleanText === '1' || cleanText.includes('price') || cleanText.includes('buy')) {
+        await sock.sendMessage(sender, { 
+            text: `⚡ *SmartNet Packages:*\n\n✅ 5GB (Weekly) - KES 63\n✅ 10GB (Monthly) - KES 99\n✅ Unlimited (Monthly) - KES 1000\n\n🚀 *Click here to Activate Instantly:*\n👉 ${WEBSITE_URL}` 
+        });
+        return;
+    }
+
+    // Option 2: Check Balance
+    if (cleanText === '2' || cleanText.includes('balance')) {
+        await sock.sendMessage(sender, { 
+            text: `🔍 *Balance Check*\n\nTo check your balance, please dial *544#* on your phone line.\n\n(Automated balance checking coming soon!)` 
+        });
+        return;
+    }
+
+    // Option 3: Support
+    if (cleanText === '3' || cleanText.includes('agent') || cleanText.includes('help')) {
+        await sock.sendMessage(sender, { 
+            text: `📞 *Customer Care*\n\nA human agent has been notified. Please describe your issue here, and we will reply shortly.` 
+        });
+        return;
+    }
+
+    // --- 🤖 RULE 4: AI CHAT (With "Silence" Fallback) ---
+    // Only send to AI if it's a real sentence (more than 3 words) to avoid spamming on "ok", "lol", etc.
+    if (text.length > 10) {
+        await sock.sendPresenceUpdate('composing', sender);
+        
+        const aiReply = await askAI(text);
+        
+        // If AI returns null (meaning it failed/crashed), WE DO NOTHING.
+        // This stops the "Hey I'm busy" spam.
+        if (aiReply) {
             await sock.sendMessage(sender, { text: aiReply });
         }
     }
