@@ -1,18 +1,18 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// --- 1. INITIALIZE AI SAFELY ---
+// --- 1. INITIALIZE AI ---
 const apiKey = process.env.GEMINI_API_KEY;
 let model = null;
 
 if (apiKey) {
     const genAI = new GoogleGenerativeAI(apiKey);
-    // UPDATED: Using 'gemini-1.5-flash' because 'gemini-pro' is outdated/404
-    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // UPDATED: Using 'gemini-2.0-flash' as confirmed by your API list
+    model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 } else {
     console.error("❌ GEMINI_API_KEY is missing in .env file!");
 }
 
-// --- 2. BOT PERSONALITY (CONTEXT) ---
+// --- 2. BOT CONTEXT ---
 const CHAT_CONTEXT = `
 You are 'SmartNet Bot', a helpful assistant for a Kenyan internet provider.
 Keep answers short (under 40 words). Be professional but friendly.
@@ -23,8 +23,7 @@ YOUR KNOWLEDGE:
   - 5GB (Weekly) = KES 63
   - 10GB (Monthly) = KES 99
   - Unlimited (Monthly) = KES 1000
-- **Speed:** Powered by Starlink technology (High Speed, Low Latency).
-- **Payment:** We accept M-Pesa.
+- **Speed:** Powered by Starlink technology.
 - **Support:** If asked to talk to a human, tell them to reply with "3".
 
 GOAL:
@@ -33,15 +32,11 @@ GOAL:
 `;
 
 const MARKETING_CONTEXT = `
-You are a Social Media Manager for 'SmartNet', a high-speed internet brand in Kenya.
-Your goal is to write engaging, exciting WhatsApp posts to keep a group active.
-- Use emojis.
-- Be hyped but professional.
-- Mention "Starlink technology".
-- End with a Call to Action (e.g., "Reply with 1 to buy!").
+You are a Social Media Manager for 'SmartNet'.
+Write an engaging WhatsApp post using emojis and mentioning "Starlink technology".
 `;
 
-// --- 3. CHAT LOGIC (For Auto-Replies) ---
+// --- 3. CHAT FUNCTION ---
 const askAI = async (userText) => {
     if (!model) return null; 
 
@@ -51,23 +46,23 @@ const askAI = async (userText) => {
         const response = await result.response;
         return response.text();
     } catch (error) {
-        console.error("AI Error (Silent Fail):", error.message);
-        return null; 
+        console.error("AI Error:", error.message);
+        return null; // Silent fail
     }
 };
 
-// --- 4. CONTENT GENERATOR (For Admin Dashboard) ---
+// --- 4. GENERATE POST FUNCTION ---
 const generatePost = async (topic) => {
-    if (!model) return "⚠️ Error: AI API Key is missing in .env file.";
+    if (!model) return "⚠️ Error: API Key missing.";
 
     try {
-        const prompt = `${MARKETING_CONTEXT}\n\nTask: Write a fun WhatsApp post about: "${topic}"`;
+        const prompt = `${MARKETING_CONTEXT}\n\nTask: Write a post about: "${topic}"`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         return response.text();
     } catch (error) {
-        console.error("AI Generation Failed:", error.message);
-        return "🔥 Get the fastest internet in Kenya today! Prices start at KES 63. Reply '1' to join the movement!";
+        console.error("AI Error:", error.message);
+        return "🔥 Get the fastest internet in Kenya! Reply '1' to join.";
     }
 };
 
