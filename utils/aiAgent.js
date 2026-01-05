@@ -1,13 +1,13 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // --- 1. INITIALIZE AI SAFELY ---
-// We check if the key exists to prevent crashing if .env is empty
 const apiKey = process.env.GEMINI_API_KEY;
 let model = null;
 
 if (apiKey) {
     const genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // UPDATED: Using 'gemini-1.5-flash' because 'gemini-pro' is outdated/404
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 } else {
     console.error("❌ GEMINI_API_KEY is missing in .env file!");
 }
@@ -43,7 +43,6 @@ Your goal is to write engaging, exciting WhatsApp posts to keep a group active.
 
 // --- 3. CHAT LOGIC (For Auto-Replies) ---
 const askAI = async (userText) => {
-    // If AI is broken or key is missing, return NULL (Stay Silent)
     if (!model) return null; 
 
     try {
@@ -53,7 +52,6 @@ const askAI = async (userText) => {
         return response.text();
     } catch (error) {
         console.error("AI Error (Silent Fail):", error.message);
-        // Return NULL so the bot stays silent instead of annoying the user
         return null; 
     }
 };
