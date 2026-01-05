@@ -32,7 +32,7 @@ const handleSmartMenu = async (sock, msg) => {
     // Option 1: Buy (Link)
     if (cleanText === '1' || cleanText.includes('price') || cleanText.includes('buy')) {
         await sock.sendMessage(sender, { 
-            text: `⚡ *SmartNet Packages:*\n\n✅ 5GB (Weekly) - KES 63\n✅ 10GB (Monthly) - KES 99\n✅ Unlimited (Monthly) - KES 1000\n\n🚀 *Click here to Activate Instantly:*\n👉 ${WEBSITE_URL}` 
+            text: `⚡ *SmartNet Packages:*\n\n✅ 5GB (Weekly) - KES 63\n✅ 10GB (14 Days) - KES 99\n✅ 25GB (30 Days) - KES 273\n✅ 60GB (30 Days) - KES 699.\n✅ Unlimited (Monthly) - KES 1000\n\n🚀 *Click here to Activate Instantly:*\n👉 ${WEBSITE_URL}` 
         });
         return;
     }

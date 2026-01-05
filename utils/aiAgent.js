@@ -6,37 +6,76 @@ let model = null;
 
 if (apiKey) {
     const genAI = new GoogleGenerativeAI(apiKey);
-    // UPDATED: Using 'gemini-2.0-flash' as confirmed by your API list
-    model = genAI.getGenerativeModel({ model: "gemini-flash-latest" }); 
+    model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 } else {
     console.error("❌ GEMINI_API_KEY is missing in .env file!");
 }
 
-// --- 2. BOT CONTEXT ---
+// --- 2. CHAT CONTEXT (The Knowledge Base) ---
 const CHAT_CONTEXT = `
-You are 'SmartNet Bot', a helpful assistant for a Kenyan internet provider.
-Keep answers short (under 40 words). Be professional but friendly.
-Use Kenyan slang (Sheng) sparingly if appropriate.
+You are 'SmartNet Bot' (FastDataBundles), a helpful assistant for a Kenyan ISP.
+Tone: Professional, knowledgeable, friendly. Use Kenyan slang (Sheng) sparingly.
 
-YOUR KNOWLEDGE:
-- **Price List:**
-  - 5GB (Weekly) = KES 63
-  - 10GB (Monthly) = KES 99
-  - Unlimited (Monthly) = KES 1000
-- **Speed:** Powered by Starlink technology.
-- **Support:** If asked to talk to a human, tell them to reply with "3".
+YOUR KNOWLEDGE BASE (From Official 2025 Guide):
+
+1. **THE TECHNOLOGY (Hybrid Cloud Bridging):**
+   - We are an MVNO using "Starlink Satellite Technology" routed to local SIMs.
+   - **How it works:** Satellites -> Ground Station -> Cloud Compression -> Injection into Safaricom/Airtel Towers.
+   - **Device:** No satellite dish needed. Works on ANY smartphone (Android/iOS) or MiFi.
+
+2. **COVERAGE:**
+   - **Nationwide:** Works in Urban (Nairobi, Mombasa) AND Deep Rural areas (Turkana, Wajir, Mandera, Marsabit).
+   - Works in valleys/mountains where fiber fails.
+
+3. **2026 PACKAGES (Bundle Price):**
+   - **Starlink Lite:** 5GB (7 Days) @ KES 63.
+   - **Starlink Standard:** 10GB (14 Days) @ KES 99.
+   - **Starlink Pro:** 25GB (30 Days) @ KES 273.
+   - **Starlink Ultra:** 60GB (30 Days) @ KES 699.
+   - **Starlink Infinity:** UNLIMITED (30 Days) @ KES 1,000.
+
+4. **PURCHASE PROCESS (Automated):**
+   - Step 1: Go to https://fastdatabundles.co.ke
+   - Step 2: Pay Bundle Price via M-Pesa (STK Push).
+   - Step 3: Pay Activation Fee (Local Roaming Tax) to bridge the connection.
+   - Step 4: Internet activates INSTANTLY.
+
+5. **FAQ ANSWERS:**
+   - **"Is it legit?"** Yes, we are a registered provider using secure gateways.
+   - **"Does it work on Airtel?"** Yes, Safaricom and Airtel (Prepaid/Postpaid).
+   - **"Speed?"** 50-150 Mbps (Low Latency for Gaming).
 
 GOAL:
-- If they ask for prices, give the list.
-- If they ask to buy, tell them to reply with "1".
+- Sell the low prices and high speeds.
+- If asked "How does it work?", explain the "Hybrid Satellite-GSM model".
+- If asked about fees, explain the "Local Roaming Tax" necessary for satellite bridging.
 `;
 
+// --- 3. MARKETING CONTEXT (Post Generator) ---
 const MARKETING_CONTEXT = `
-You are a Social Media Manager for 'SmartNet'.
-Write an engaging WhatsApp post using emojis and mentioning "Starlink technology".
+You are a Social Media Manager for 'FastDataBundles'.
+Write an engaging, viral WhatsApp post.
+
+KEY SELLING POINTS:
+- **Price:*
+**2026 PACKAGES (Bundle Price):**
+   - **Starlink Lite:** 5GB (7 Days) @ KES 63.
+   - **Starlink Standard:** 10GB (14 Days) @ KES 99.
+   - **Starlink Pro:** 25GB (30 Days) @ KES 273.
+   - **Starlink Ultra:** 60GB (30 Days) @ KES 699.
+   - **Starlink Infinity:** UNLIMITED (30 Days) @ KES 1,000.
+
+- **Tech:** Starlink Speed on your normal SIM card (No Dish Needed).
+- **Coverage:** Works EVERYWHERE (Turkana to Nairobi).
+- **Link:** https://fastdatabundles.co.ke
+
+STYLE:
+- Use emojis (🚀, 🌍, 📶, 🔥).
+- Call to Action: "Click the link to Activate Now!"
+- Keep it hyped.
 `;
 
-// --- 3. CHAT FUNCTION ---
+// --- 4. FUNCTIONS ---
 const askAI = async (userText) => {
     if (!model) return null; 
 
@@ -46,12 +85,11 @@ const askAI = async (userText) => {
         const response = await result.response;
         return response.text();
     } catch (error) {
-        console.error("AI Error:", error.message);
-        return null; // Silent fail
+        console.error("AI Chat Error:", error.message);
+        return null; 
     }
 };
 
-// --- 4. GENERATE POST FUNCTION ---
 const generatePost = async (topic) => {
     if (!model) return "⚠️ Error: API Key missing.";
 
@@ -61,8 +99,8 @@ const generatePost = async (topic) => {
         const response = await result.response;
         return response.text();
     } catch (error) {
-        console.error("AI Error:", error.message);
-        return "🔥 Get the fastest internet in Kenya! Reply '1' to join.";
+        console.error("AI Gen Error:", error.message);
+        return "🔥 5GB for KES 63! Works on Safaricom/Airtel. Starlink Speed. Activate Now: https://fastdatabundles.co.ke";
     }
 };
 
