@@ -7,7 +7,7 @@ let model = null;
 if (apiKey) {
     const genAI = new GoogleGenerativeAI(apiKey);
     // UPDATED: Using 'gemini-2.0-flash' as confirmed by your API list
-    model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    model = genAI.getGenerativeModel({ model: "gemini-flash-latest" }); 
 } else {
     console.error("❌ GEMINI_API_KEY is missing in .env file!");
 }
