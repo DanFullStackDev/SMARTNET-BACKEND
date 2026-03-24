@@ -1,6 +1,7 @@
 // index.js (Final Safe Version)
 require('dotenv').config();
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+// Added fetchLatestBaileysVersion and Browsers to the import
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const express = require('express');
 const fs = require('fs');
@@ -43,20 +44,25 @@ async function connectToWhatsApp() {
     console.log("🔌 Connecting to WhatsApp...");
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
 
-   const sock = makeWASocket({
+    // Fetch the absolute latest version of WA Web to prevent connection rejections
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    console.log(`📡 Using WA v${version.join('.')}, isLatest: ${isLatest}`);
+
+    const sock = makeWASocket({
+        version,                               // Forces the newest WhatsApp Web version
         auth: state,
         logger: pino({ level: 'silent' }),
-        browser: ['SmartNet', 'Chrome', '2.0.0'], // 🛡️ Disguises the bot as a normal Chrome browser
-        printQRInTerminal: true                   // 📱 Prints the QR in the logs so you can easily scan it
+        browser: Browsers.macOS('Desktop')     // Native, highly-trusted browser disguise
     });
+
     global.sock = sock; 
 
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
-            global.qrCodeData = qr;
-            console.log("New QR Code generated");
+            global.qrCodeData = qr; // Sets the QR for your frontend to fetch!
+            console.log("✅ New QR Code generated and ready for frontend!");
         }
 
         if (connection === 'close') {
