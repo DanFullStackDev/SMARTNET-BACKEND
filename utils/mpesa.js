@@ -45,7 +45,12 @@ const initiateSTKPush = async (phone, amount, accountReference, transactionDesc)
     // Password must be generated using the Store Number from your email
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
     const password = Buffer.from(`${storeNumber}${passkey}${timestamp}`).toString('base64');
-
+    console.log("\n--- DARAJA DEBUG INFO ---");
+    console.log("Environment:", process.env.MPESA_ENVIRONMENT);
+    console.log("Store Number:", storeNumber);
+    console.log("Till Number:", tillNumber);
+    console.log("Passkey starts with:", passkey ? passkey.substring(0, 5) + "..." : "MISSING!");
+    console.log("-------------------------\n");
     try {
         const response = await axios.post(`${baseURL}/mpesa/stkpush/v1/processrequest`, {
             BusinessShortCode: storeNumber, // MUST be the Store Number from the email
