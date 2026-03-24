@@ -43,11 +43,12 @@ async function connectToWhatsApp() {
     console.log("🔌 Connecting to WhatsApp...");
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
 
-    const sock = makeWASocket({
+   const sock = makeWASocket({
         auth: state,
         logger: pino({ level: 'silent' }),
+        browser: ['SmartNet', 'Chrome', '2.0.0'], // 🛡️ Disguises the bot as a normal Chrome browser
+        printQRInTerminal: true                   // 📱 Prints the QR in the logs so you can easily scan it
     });
-
     global.sock = sock; 
 
     sock.ev.on('connection.update', (update) => {
