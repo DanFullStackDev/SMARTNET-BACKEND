@@ -50,8 +50,6 @@ async function connectToWhatsApp() {
 
     global.sock = sock; 
 
-    // Start Scheduler (Only runs if bot is connected)
-    
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         
@@ -62,13 +60,18 @@ async function connectToWhatsApp() {
 
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+            
             if (shouldReconnect) {
-                console.log('📡 Reconnecting...');
-                connectToWhatsApp();
+                // Log the exact reason WhatsApp disconnected us
+                console.log('❌ Disconnect Reason:', lastDisconnect?.error?.message || lastDisconnect.error);
+                console.log('📡 Reconnecting in 5 seconds...');
+                setTimeout(connectToWhatsApp, 5000); // Wait 5 seconds before trying again
             } else {
                 console.log('🔒 Logged out. Delete session and restart.');
-                if (fs.existsSync('./auth_info_baileys')) fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
-                connectToWhatsApp();
+                if (fs.existsSync('./auth_info_baileys')) {
+                    fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
+                }
+                setTimeout(connectToWhatsApp, 5000); // Wait 5 seconds to prevent spamming
             }
         } else if (connection === 'open') {
             console.log('✅ WhatsApp Connected!');
@@ -98,7 +101,7 @@ app.listen(PORT, () => {
         console.log("🛑 Bot Disabled Locally (Safe Mode Active)");
     } else {
         // On VPS, this variable won't exist, so it connects normally.
-        initScheduler();
-        connectToWhatsApp();
+        initScheduler();       // Starts ONLY ONCE when the server boots
+        connectToWhatsApp();   // Starts the WhatsApp connection
     }
 });
