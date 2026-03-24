@@ -44,4 +44,3 @@ const initScheduler = () => {
 };
 
 module.exports = { initScheduler };
-module.exports = { initScheduler };

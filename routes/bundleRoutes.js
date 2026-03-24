@@ -1,15 +1,12 @@
+// routes/bundleRoutes.js
 const express = require('express');
 const router = express.Router();
-const { 
-  initiateBundlePayment, 
-  handleBundleWebhook, 
-  verifyBundleTransaction // Import the new function
-} = require('../controllers/bundleController');
+const bundleController = require('../controllers/bundleController');
 
-router.post('/initiate', initiateBundlePayment);
-router.post('/webhook', handleBundleWebhook);
+// Route for the frontend to hit when a user clicks "Pay"
+router.post('/initiate', bundleController.initiateBundlePurchase);
 
-// New GET route for fetching transaction details by reference
-router.get('/verify/:reference', verifyBundleTransaction);
+// Route for Safaricom Daraja to ping silently in the background
+router.post('/mpesa/webhook', bundleController.mpesaWebhook);
 
 module.exports = router;
