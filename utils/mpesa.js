@@ -38,27 +38,26 @@ const formatPhoneNumber = (phone) => {
 };
 
 const initiateSTKPush = async (phone, amount, accountReference, transactionDesc) => {
-    // 👇 We extract both storeNumber and tillNumber here!
     const { baseURL, storeNumber, tillNumber, passkey, callbackUrl } = getMpesaCredentials();
     const token = await generateToken();
     const formattedPhone = formatPhoneNumber(phone);
 
-    // Password generation uses the Store Number (Head Office)
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
     const password = Buffer.from(`${storeNumber}${passkey}${timestamp}`).toString('base64');
 
+    // 👇 FORCING PAYBILL TO BYPASS SAFARICOM'S STRICT TYPING
     const isProd = process.env.MPESA_ENVIRONMENT === 'production';
-    const transactionType = isProd ? "CustomerBuyGoodsOnline" : "CustomerPayBillOnline";
+    const transactionType = isProd ? "CustomerPayBillOnline" : "CustomerPayBillOnline";
 
     try {
         const response = await axios.post(`${baseURL}/mpesa/stkpush/v1/processrequest`, {
-            BusinessShortCode: tillNumber, // 👇 The actual Till receiving the money
+            BusinessShortCode: storeNumber, // Using the Daraja Short Code (4564171)
             Password: password,
             Timestamp: timestamp,
             TransactionType: transactionType, 
             Amount: amount,
             PartyA: formattedPhone,
-            PartyB: tillNumber,            // 👇 The actual Till receiving the money
+            PartyB: tillNumber, // Using the Daraja Short Code (4564171)
             PhoneNumber: formattedPhone,
             CallBackURL: callbackUrl,
             AccountReference: accountReference,
