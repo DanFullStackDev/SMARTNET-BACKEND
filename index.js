@@ -51,8 +51,7 @@ async function connectToWhatsApp() {
     global.sock = sock; 
 
     // Start Scheduler (Only runs if bot is connected)
-    initScheduler(sock); 
-
+    
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         
@@ -99,6 +98,7 @@ app.listen(PORT, () => {
         console.log("🛑 Bot Disabled Locally (Safe Mode Active)");
     } else {
         // On VPS, this variable won't exist, so it connects normally.
+        initScheduler();
         connectToWhatsApp();
     }
 });

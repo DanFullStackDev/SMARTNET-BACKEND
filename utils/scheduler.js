@@ -22,9 +22,10 @@ const processJob = async (job, sock) => {
     }
 };
 
-const initScheduler = (sock) => {
+const initScheduler = () => {
     // Run every minute
     cron.schedule('* * * * *', async () => {
+        const sock = global.sock; // <--- ADD THIS LINE
         if (!sock) return;
 
         const now = new Date();
@@ -42,4 +43,5 @@ const initScheduler = (sock) => {
     console.log("🕒 Scheduler Service Started");
 };
 
+module.exports = { initScheduler };
 module.exports = { initScheduler };
