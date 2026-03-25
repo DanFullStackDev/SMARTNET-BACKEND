@@ -38,7 +38,8 @@ app.use((req, res, next) => {
 app.use('/api/bundles', bundleRoutes);
 app.use('/api/bundle-admin', bundleAdminRoutes);
 app.use('/api', botRoutes);
-
+// Find your existing route definitions and add this:
+app.use('/api/support', require('./routes/supportRoutes'));
 // --- WHATSAPP BOT CONNECTION ---
 async function connectToWhatsApp() {
     console.log("🔌 Connecting to WhatsApp...");
