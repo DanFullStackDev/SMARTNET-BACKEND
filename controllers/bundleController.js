@@ -97,3 +97,40 @@ exports.mpesaWebhook = async (req, res) => {
         res.status(500).send("Server Error");
     }
 };
+// --- ADD THIS TO THE BOTTOM OF controllers/bundleController.js ---
+
+// 3. Verify Transaction (Frontend Polling Endpoint)
+exports.verifyTransaction = async (req, res) => {
+    try {
+        const { checkoutRequestId } = req.params;
+        
+        // Look up the transaction Safaricom just updated
+        const transaction = await BundleTransaction.findOne({ checkoutRequestId });
+
+        if (!transaction) {
+            return res.status(404).json({ success: false, message: "Transaction not found" });
+        }
+
+        // If the webhook marked it as success
+        if (transaction.status === 'success' || transaction.status === 'completed') {
+            return res.json({ 
+                success: true, 
+                data: {
+                    phoneNumber: transaction.phoneNumber,
+                    planName: transaction.bundleName // Important: match this exactly
+                } 
+            });
+        } 
+        // If the webhook marked it as failed (cancelled, no funds, etc)
+        else if (transaction.status === 'failed') {
+            return res.json({ success: false, status: 'failed' });
+        } 
+        // If it's still pending
+        else {
+            return res.status(202).json({ success: false, message: "Still pending" });
+        }
+    } catch (error) {
+        console.error("Verify Error:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
