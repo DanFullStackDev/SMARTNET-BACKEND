@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy SmartNet Bot to Contabo VPS
 
 on:
   push:
@@ -9,25 +9,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Deploy to VPS via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
           script: |
-            # 1. Go to the project folder (Update this if your folder name is different!)
-            cd ~/SMARTNET-BACKEND
-
-            # 2. Get the latest code
+            # Navigate to the specific project directory
+            cd ~/htdocs/api.fastdatabundles.co.ke/SMARTNET-BACKEND
+            
+            # Pull the latest code
             git pull origin main
-
-            # 3. Install any new libraries
+            
+            # Install dependencies
             npm install
-
-            # 4. Restart the bot
-            pm2 restart all
+            
+            # Restart the specific PM2 process
+            pm2 restart smartnet-bot
