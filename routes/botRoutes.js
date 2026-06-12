@@ -3,7 +3,7 @@ const router = express.Router();
 const ScheduledJob = require('../models/ScheduledJob');
 const { generatePost } = require('../utils/aiAgent');
 
-const waitHuman = async (min = 3, max = 10) => {
+const waitHuman = async (min = 15, max = 45) => {
     const ms = Math.floor(Math.random() * (max - min + 1) + min) * 1000;
     await new Promise(resolve => setTimeout(resolve, ms));
 };
@@ -101,13 +101,27 @@ router.post('/broadcast-groups', async (req, res) => {
     const { groups, message } = req.body;
     if (!sock) return res.status(500).json({ error: "Bot disconnected" });
 
-    res.json({ success: true, message: "Sending..." });
+    // Respond to the frontend immediately so the dashboard doesn't hang/timeout
+    res.json({ success: true, message: "Broadcast initiated in the background safely..." });
+    
+    // Process the loop asynchronously
     for (const groupJid of groups) {
-        await sock.sendMessage(groupJid, { text: message });
-        await waitHuman(2, 5);
+        try {
+            // 1. Simulate a human typing for 2 to 5 seconds
+            await sock.sendPresenceUpdate('composing', groupJid);
+            await waitHuman(2, 5); 
+            
+            // 2. Send the actual payload
+            await sock.sendMessage(groupJid, { text: message });
+            console.log(`✅ Broadcast sent to ${groupJid}`);
+
+            // 3. The crucial cooldown before opening the next group (15-45 seconds)
+            await waitHuman(15, 45); 
+        } catch (err) {
+            console.error(`❌ Failed to broadcast to ${groupJid}:`, err.message);
+        }
     }
 });
-
 router.post('/schedule-broadcast', async (req, res) => {
     const { type, targets, message, scheduledTime } = req.body;
     try {
